@@ -64,10 +64,19 @@ class PricingService:
         return list(result.scalars().all())
 
     async def get_node_by_id(self, node_id: str) -> Optional[PricingNode]:
-        """Get a pricing node by ID."""
+        """Get a pricing node by ID or asset ID."""
+        # First try direct lookup
         query = select(PricingNode).where(PricingNode.node_id == node_id)
         result = await self.db.execute(query)
-        return result.scalar_one_or_none()
+        node = result.scalar_one_or_none()
+
+        # If not found, try with PN_ prefix (lookup by asset_id)
+        if node is None and not node_id.startswith("PN_"):
+            query = select(PricingNode).where(PricingNode.node_id == f"PN_{node_id}")
+            result = await self.db.execute(query)
+            node = result.scalar_one_or_none()
+
+        return node
 
     async def create_node(self, node_data: PricingNodeCreate) -> PricingNode:
         """Create a pricing node."""
@@ -122,7 +131,7 @@ class PricingService:
             return None
 
         records = await self.get_pricing_for_node(
-            node_id, start_time, end_time, market_type
+            node.node_id, start_time, end_time, market_type
         )
 
         data = [

@@ -28,7 +28,11 @@ class Zone(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     zone_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     zone_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    zone_type: Mapped[ZoneType] = mapped_column(Enum(ZoneType), nullable=False, index=True)
+    zone_type: Mapped[ZoneType] = mapped_column(
+        Enum(ZoneType, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        index=True
+    )
     iso_region: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     parent_zone_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

@@ -38,11 +38,18 @@ class Outage(Base):
     asset_id: Mapped[str] = mapped_column(
         String(50), ForeignKey("assets.asset_id", ondelete="CASCADE"), nullable=False
     )
-    outage_type: Mapped[OutageType] = mapped_column(Enum(OutageType), nullable=False, index=True)
+    outage_type: Mapped[OutageType] = mapped_column(
+        Enum(OutageType, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        index=True
+    )
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[OutageStatus] = mapped_column(
-        Enum(OutageStatus), nullable=False, default=OutageStatus.ACTIVE, index=True
+        Enum(OutageStatus, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=OutageStatus.ACTIVE,
+        index=True
     )
     cause_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     cause_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

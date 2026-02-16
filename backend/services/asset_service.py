@@ -151,19 +151,19 @@ class AssetService:
             asset_dict = {
                 "asset_id": asset.asset_id,
                 "asset_name": asset.asset_name,
-                "fuel_type": asset.fuel_type.value,
+                "fuel_type": asset.fuel_type.value if hasattr(asset.fuel_type, 'value') else asset.fuel_type,
                 "capacity_mw": asset.capacity_mw,
                 "latitude": asset.latitude,
                 "longitude": asset.longitude,
                 "iso_region": asset.iso_region,
                 "zone": asset.zone,
                 "owner": asset.owner,
-                "outage_type": row[1].value if row[1] else None,
-                "outage_status": row[2].value if row[2] else None,
-                "outage_start": row[3].isoformat() if row[3] else None,
-                "outage_end": row[4].isoformat() if row[4] else None,
-                "cause_code": row[5],
-                "capacity_reduction_mw": row[6],
+                "outage_type": row[2].value if row[2] and hasattr(row[2], 'value') else row[2],
+                "outage_status": row[3].value if row[3] and hasattr(row[3], 'value') else row[3],
+                "outage_start": row[4].isoformat() if row[4] else None,
+                "outage_end": row[5].isoformat() if row[5] else None,
+                "cause_code": row[6],
+                "capacity_reduction_mw": row[7],
             }
             assets_with_outages.append(asset_dict)
 
@@ -237,6 +237,6 @@ class AssetService:
 
         result = await self.db.execute(query)
         return {
-            row[0].value: {"count": row[1], "capacity_mw": row[2]}
+            (row[0].value if hasattr(row[0], 'value') else row[0]): {"count": row[1], "capacity_mw": row[2]}
             for row in result.all()
         }

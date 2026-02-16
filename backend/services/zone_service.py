@@ -107,7 +107,7 @@ class ZoneService:
                     properties=ZoneFeatureProperties(
                         zone_id=zone.zone_id,
                         zone_name=zone.zone_name,
-                        zone_type=zone.zone_type.value,
+                        zone_type=zone.zone_type.value if hasattr(zone.zone_type, 'value') else zone.zone_type,
                         iso_region=zone.iso_region,
                         fill_color=zone.fill_color,
                         stroke_color=zone.stroke_color,

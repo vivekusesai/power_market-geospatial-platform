@@ -37,7 +37,11 @@ class Asset(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     asset_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     asset_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    fuel_type: Mapped[FuelType] = mapped_column(Enum(FuelType), nullable=False, index=True)
+    fuel_type: Mapped[FuelType] = mapped_column(
+        Enum(FuelType, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        index=True
+    )
     capacity_mw: Mapped[float] = mapped_column(Float, nullable=False)
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
