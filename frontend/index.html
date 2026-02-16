@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Market Geospatial Platform</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header id="header">
+            <div class="header-left">
+                <h1>Power Market Geospatial Platform</h1>
+            </div>
+            <div class="header-center">
+                <select id="iso-select">
+                    <option value="">All ISOs</option>
+                </select>
+                <span id="asset-count">Loading...</span>
+            </div>
+            <div class="header-right">
+                <span id="current-time"></span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div id="main-content">
+            <!-- Left Panel - Layer Controls -->
+            <aside id="left-panel" class="panel">
+                <div class="panel-header">
+                    <h2>Layers</h2>
+                    <button id="toggle-left-panel" class="panel-toggle">&lt;</button>
+                </div>
+                <div class="panel-content">
+                    <!-- Base Layers -->
+                    <div class="layer-group">
+                        <h3>Base Map</h3>
+                        <label>
+                            <input type="radio" name="basemap" value="osm" checked> OpenStreetMap
+                        </label>
+                        <label>
+                            <input type="radio" name="basemap" value="dark"> Dark
+                        </label>
+                        <label>
+                            <input type="radio" name="basemap" value="satellite"> Satellite
+                        </label>
+                    </div>
+
+                    <!-- Asset Layers -->
+                    <div class="layer-group">
+                        <h3>Assets</h3>
+                        <label>
+                            <input type="checkbox" id="layer-assets" checked> Generation Assets
+                        </label>
+                        <div class="sub-options" id="fuel-type-filters">
+                            <label><input type="checkbox" data-fuel="coal" checked> Coal</label>
+                            <label><input type="checkbox" data-fuel="natural_gas" checked> Natural Gas</label>
+                            <label><input type="checkbox" data-fuel="nuclear" checked> Nuclear</label>
+                            <label><input type="checkbox" data-fuel="wind" checked> Wind</label>
+                            <label><input type="checkbox" data-fuel="solar" checked> Solar</label>
+                            <label><input type="checkbox" data-fuel="hydro" checked> Hydro</label>
+                            <label><input type="checkbox" data-fuel="other" checked> Other</label>
+                        </div>
+                    </div>
+
+                    <!-- Outage Status Filter -->
+                    <div class="layer-group">
+                        <h3>Outage Status</h3>
+                        <label><input type="checkbox" id="status-available" checked> <span class="status-dot available"></span> Available</label>
+                        <label><input type="checkbox" id="status-derated" checked> <span class="status-dot derated"></span> Derated</label>
+                        <label><input type="checkbox" id="status-forced" checked> <span class="status-dot forced"></span> Forced Outage</label>
+                        <label><input type="checkbox" id="status-planned" checked> <span class="status-dot planned"></span> Planned Maintenance</label>
+                    </div>
+
+                    <!-- Zone Layers -->
+                    <div class="layer-group">
+                        <h3>Zones</h3>
+                        <label>
+                            <input type="checkbox" id="layer-iso-boundaries" checked> ISO Boundaries
+                        </label>
+                        <label>
+                            <input type="checkbox" id="layer-load-zones"> Load Zones
+                        </label>
+                        <label>
+                            <input type="checkbox" id="layer-transmission-zones"> Transmission Zones
+                        </label>
+                    </div>
+
+                    <!-- Pricing Layer -->
+                    <div class="layer-group">
+                        <h3>Market Data</h3>
+                        <label>
+                            <input type="checkbox" id="layer-lmp-heatmap"> LMP Heatmap
+                        </label>
+                        <div class="sub-options">
+                            <label>Component:
+                                <select id="lmp-component">
+                                    <option value="total">Total LMP</option>
+                                    <option value="energy">Energy</option>
+                                    <option value="congestion">Congestion</option>
+                                    <option value="loss">Loss</option>
+                                </select>
+                            </label>
+                        </div>
+                        <label>
+                            <input type="checkbox" id="layer-pricing-nodes"> Pricing Nodes
+                        </label>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Map Container -->
+            <div id="map-container">
+                <div id="map"></div>
+
+                <!-- Map Legend -->
+                <div id="map-legend">
+                    <h4>Asset Status</h4>
+                    <div class="legend-item"><span class="legend-dot available"></span> Available</div>
+                    <div class="legend-item"><span class="legend-dot derated"></span> Derated</div>
+                    <div class="legend-item"><span class="legend-dot forced"></span> Forced Outage</div>
+                    <div class="legend-item"><span class="legend-dot planned"></span> Planned Maintenance</div>
+                </div>
+
+                <!-- LMP Legend (hidden by default) -->
+                <div id="lmp-legend" class="hidden">
+                    <h4>LMP ($/MWh)</h4>
+                    <div class="gradient-bar"></div>
+                    <div class="gradient-labels">
+                        <span id="lmp-min">$0</span>
+                        <span id="lmp-max">$100</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Details -->
+            <aside id="right-panel" class="panel">
+                <div class="panel-header">
+                    <h2>Details</h2>
+                    <button id="toggle-right-panel" class="panel-toggle">&gt;</button>
+                </div>
+                <div class="panel-content">
+                    <div id="details-placeholder">
+                        <p>Click on an asset or zone to view details.</p>
+                    </div>
+                    <div id="details-content" class="hidden">
+                        <!-- Asset Details -->
+                        <div id="asset-details" class="detail-section hidden">
+                            <h3 id="asset-name">Asset Name</h3>
+                            <table class="detail-table">
+                                <tr><td>ID:</td><td id="detail-asset-id">-</td></tr>
+                                <tr><td>Fuel Type:</td><td id="detail-fuel-type">-</td></tr>
+                                <tr><td>Capacity:</td><td id="detail-capacity">-</td></tr>
+                                <tr><td>Owner:</td><td id="detail-owner">-</td></tr>
+                                <tr><td>ISO:</td><td id="detail-iso">-</td></tr>
+                                <tr><td>Zone:</td><td id="detail-zone">-</td></tr>
+                            </table>
+
+                            <div id="outage-info" class="hidden">
+                                <h4>Current Outage</h4>
+                                <table class="detail-table outage-table">
+                                    <tr><td>Type:</td><td id="detail-outage-type">-</td></tr>
+                                    <tr><td>Status:</td><td id="detail-outage-status">-</td></tr>
+                                    <tr><td>Start:</td><td id="detail-outage-start">-</td></tr>
+                                    <tr><td>End:</td><td id="detail-outage-end">-</td></tr>
+                                    <tr><td>Cause:</td><td id="detail-cause-code">-</td></tr>
+                                </table>
+                            </div>
+
+                            <div id="pricing-info">
+                                <h4>Latest Pricing</h4>
+                                <div id="pricing-chart-container">
+                                    <canvas id="pricing-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Zone Details -->
+                        <div id="zone-details" class="detail-section hidden">
+                            <h3 id="zone-name">Zone Name</h3>
+                            <table class="detail-table">
+                                <tr><td>ID:</td><td id="detail-zone-id">-</td></tr>
+                                <tr><td>Type:</td><td id="detail-zone-type">-</td></tr>
+                                <tr><td>ISO:</td><td id="detail-zone-iso">-</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Bottom Panel - Time Slider -->
+        <footer id="bottom-panel">
+            <div class="time-controls">
+                <button id="play-btn" class="control-btn">&#9658;</button>
+                <button id="step-back-btn" class="control-btn">&lt;</button>
+                <button id="step-forward-btn" class="control-btn">&gt;</button>
+            </div>
+            <div class="time-slider-container">
+                <input type="range" id="time-slider" min="0" max="23" value="12" />
+                <div class="time-labels">
+                    <span>00:00</span>
+                    <span>06:00</span>
+                    <span>12:00</span>
+                    <span>18:00</span>
+                    <span>23:00</span>
+                </div>
+            </div>
+            <div class="time-display">
+                <input type="date" id="date-picker" />
+                <span id="selected-time">12:00</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+        <p>Loading data...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="/static/js/config.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/layers.js"></script>
+    <script src="/static/js/details.js"></script>
+    <script src="/static/js/timeline.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

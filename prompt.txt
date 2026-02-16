@@ -1,0 +1,157 @@
+Role
+You are a senior energy software architect and full-stack Python engineer experienced in power markets, ISO data models, and geospatial analytics.
+
+Goal
+Build a production-ready Python web application that visualizes power market geospatial data, including:
+* Transmission and generation asset locations
+* Unit outages (planned and forced)
+* Settlement / pricing visualization
+* Market zone overlays
+* Time-based playback of grid events
+
+The system should be modular so it can support multiple ISOs.
+
+Core Functional Capabilities
+1️⃣ Interactive Map
+  Must support:
+  * Zoom / pan
+  * Layer toggling
+  * Hover tooltips
+  * Click selection → detail panel
+  * Time slider (replay outages or price intervals)
+
+2️⃣ Outage Visualization
+Show:
+* Generator units as points
+* Status colors:
+  - Green = Available
+  - Yellow = Derated
+  - Red = Forced Outage
+  - Blue = Planned Maintenance
+* Clicking asset shows:
+  - Unit name
+  - Fuel type
+  - Capacity MW
+  - Owner
+  - Outage type
+  - Start / End time
+  - Cause code
+
+3️⃣ Settlement / Market Layer
+Allow overlay of:
+* LMP heatmap (nodal or zonal)
+* Congestion component visualization
+* Loss component visualization
+* Settlement zone boundaries
+Time granularity:
+* Hourly (minimum)
+* 5-minute optional
+
+4️⃣ Market Geography Layers
+Support:
+* ISO footprint boundaries
+* Load zones
+* Transmission zones
+* Hub locations
+* Pricing nodes (optional clustering for performance)
+
+Technical Stack Requirements
+Backend
+* Python (Required)
+Preferred:
+* FastAPI
+* SQLAlchemy ORM
+* Pydantic models
+* Async endpoints
+
+Database
+* PostgreSQL + PostGIS
+Must support:
+* Spatial indexing
+* Time series queries
+* Asset relationship modeling
+
+Frontend Mapping
+Choose ONE:
+Preferred:
+* Leaflet + JS frontend
+
+Acceptable:
+* Plotly Dash
+* Deck.gl (if justified)
+
+Data Formats
+Must support ingestion of:
+* GeoJSON (boundaries and zones)
+* CSV (outage data)
+* Market settlement data (CSV or Parquet)
+
+Data Model Requirements
+Design tables for:
+Assets
+* asset_id
+* asset_name
+* fuel_type
+* capacity_mw
+* latitude
+* longitude
+* iso_region
+* zone
+
+Outages
+* outage_id
+* asset_id
+* outage_type
+* start_time
+* end_time
+* status
+* cause_code
+
+Pricing
+* asset_id
+* timestamp
+* lmp_total
+* lmp_energy
+* lmp_congestion
+* lmp_loss
+
+Performance Requirements
+System must support:
+* 10,000+ assets
+* 1M+ price records
+* Sub-second map interaction
+* Lazy loading by bounding box
+* Tile or vector optimization if possible
+
+UI Requirements
+Main Screen:
+* Map center: Eastern Interconnect (configurable)
+* Left panel: Layer controls
+* Right panel: Asset / node details
+* Bottom: Time slider
+
+API Endpoints
+Must implement:
+GET /assets?bbox=
+GET /outages?start=&end=
+GET /pricing?node=&start=&end=
+GET /zones
+
+Bonus (If Feasible)
+Advanced Analytics
+* Outage impact radius
+* Congestion driver identification
+* Price spike detection alerts
+
+Enterprise Features
+* Role-based access
+* Audit logging
+* Data versioning
+
+Deliverables
+Generate:
+1️⃣ Full working code
+2️⃣ Sample seed dataset
+3️⃣ Local run instructions
+4️⃣ Architecture diagram (text description OK)
+5️⃣ Steps to connect real ISO market data later
