@@ -10,12 +10,11 @@ This script creates realistic sample data including:
 Run: python scripts/seed_data.py
 """
 import asyncio
-import json
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from geoalchemy2.functions import ST_GeomFromGeoJSON, ST_SetSRID, ST_MakePoint
+from geoalchemy2.functions import ST_SetSRID, ST_MakePoint
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
@@ -142,20 +141,11 @@ def get_capacity_for_fuel(fuel_type):
     return 100
 
 
-def create_iso_boundary_geojson(iso, bounds):
-    """Create a simple rectangular boundary for an ISO."""
-    return {
-        "type": "MultiPolygon",
-        "coordinates": [[
-            [
-                [bounds["min_lon"], bounds["min_lat"]],
-                [bounds["max_lon"], bounds["min_lat"]],
-                [bounds["max_lon"], bounds["max_lat"]],
-                [bounds["min_lon"], bounds["max_lat"]],
-                [bounds["min_lon"], bounds["min_lat"]],
-            ]
-        ]]
-    }
+def create_polygon_wkt(bounds):
+    """Create a WKT MultiPolygon for the given bounds."""
+    min_lon, max_lon = bounds["min_lon"], bounds["max_lon"]
+    min_lat, max_lat = bounds["min_lat"], bounds["max_lat"]
+    return f"SRID=4326;MULTIPOLYGON((({min_lon} {min_lat}, {max_lon} {min_lat}, {max_lon} {max_lat}, {min_lon} {max_lat}, {min_lon} {min_lat})))"
 
 
 def generate_assets(session, num_per_iso=200):
@@ -351,7 +341,7 @@ def generate_zones(session):
             fill_color=config["color"],
             stroke_color=config["color"],
             fill_opacity=0.15,
-            geom=f"SRID=4326;{json.dumps(create_iso_boundary_geojson(iso, config['bounds']))}",
+            geom=create_polygon_wkt(config["bounds"]),
         )
         zones.append(boundary)
 
@@ -379,7 +369,7 @@ def generate_zones(session):
                 fill_color=config["color"],
                 stroke_color=config["color"],
                 fill_opacity=0.25,
-                geom=f"SRID=4326;{json.dumps(create_iso_boundary_geojson(iso, zone_bounds))}",
+                geom=create_polygon_wkt(zone_bounds),
             )
             zones.append(load_zone)
 
