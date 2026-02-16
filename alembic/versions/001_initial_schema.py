@@ -21,34 +21,50 @@ def upgrade() -> None:
     # Enable PostGIS extension
     op.execute("CREATE EXTENSION IF NOT EXISTS postgis")
 
-    # Create fuel_type enum
+    # Create fuel_type enum (if not exists)
     op.execute("""
-        CREATE TYPE fueltype AS ENUM (
-            'coal', 'natural_gas', 'nuclear', 'hydro', 'wind',
-            'solar', 'oil', 'biomass', 'geothermal', 'battery', 'other'
-        )
+        DO $$ BEGIN
+            CREATE TYPE fueltype AS ENUM (
+                'coal', 'natural_gas', 'nuclear', 'hydro', 'wind',
+                'solar', 'oil', 'biomass', 'geothermal', 'battery', 'other'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
-    # Create outage_type enum
+    # Create outage_type enum (if not exists)
     op.execute("""
-        CREATE TYPE outagetype AS ENUM (
-            'planned', 'forced', 'maintenance', 'derate'
-        )
+        DO $$ BEGIN
+            CREATE TYPE outagetype AS ENUM (
+                'planned', 'forced', 'maintenance', 'derate'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
-    # Create outage_status enum
+    # Create outage_status enum (if not exists)
     op.execute("""
-        CREATE TYPE outagestatus AS ENUM (
-            'active', 'scheduled', 'completed', 'cancelled'
-        )
+        DO $$ BEGIN
+            CREATE TYPE outagestatus AS ENUM (
+                'active', 'scheduled', 'completed', 'cancelled'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
-    # Create zone_type enum
+    # Create zone_type enum (if not exists)
     op.execute("""
-        CREATE TYPE zonetype AS ENUM (
-            'iso_boundary', 'load_zone', 'transmission_zone',
-            'settlement_zone', 'pricing_zone', 'reserve_zone'
-        )
+        DO $$ BEGIN
+            CREATE TYPE zonetype AS ENUM (
+                'iso_boundary', 'load_zone', 'transmission_zone',
+                'settlement_zone', 'pricing_zone', 'reserve_zone'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # Create assets table
@@ -57,7 +73,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("asset_id", sa.String(50), nullable=False),
         sa.Column("asset_name", sa.String(255), nullable=False),
-        sa.Column("fuel_type", sa.Enum("coal", "natural_gas", "nuclear", "hydro", "wind", "solar", "oil", "biomass", "geothermal", "battery", "other", name="fueltype"), nullable=False),
+        sa.Column("fuel_type", sa.Enum("coal", "natural_gas", "nuclear", "hydro", "wind", "solar", "oil", "biomass", "geothermal", "battery", "other", name="fueltype", create_type=False), nullable=False),
         sa.Column("capacity_mw", sa.Float(), nullable=False),
         sa.Column("latitude", sa.Float(), nullable=False),
         sa.Column("longitude", sa.Float(), nullable=False),
@@ -82,10 +98,10 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("outage_id", sa.String(50), nullable=False),
         sa.Column("asset_id", sa.String(50), nullable=False),
-        sa.Column("outage_type", sa.Enum("planned", "forced", "maintenance", "derate", name="outagetype"), nullable=False),
+        sa.Column("outage_type", sa.Enum("planned", "forced", "maintenance", "derate", name="outagetype", create_type=False), nullable=False),
         sa.Column("start_time", sa.DateTime(timezone=True), nullable=False),
         sa.Column("end_time", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("status", sa.Enum("active", "scheduled", "completed", "cancelled", name="outagestatus"), nullable=False),
+        sa.Column("status", sa.Enum("active", "scheduled", "completed", "cancelled", name="outagestatus", create_type=False), nullable=False),
         sa.Column("cause_code", sa.String(50), nullable=True),
         sa.Column("cause_description", sa.Text(), nullable=True),
         sa.Column("capacity_reduction_mw", sa.Float(), nullable=True),
@@ -152,7 +168,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("zone_id", sa.String(50), nullable=False),
         sa.Column("zone_name", sa.String(255), nullable=False),
-        sa.Column("zone_type", sa.Enum("iso_boundary", "load_zone", "transmission_zone", "settlement_zone", "pricing_zone", "reserve_zone", name="zonetype"), nullable=False),
+        sa.Column("zone_type", sa.Enum("iso_boundary", "load_zone", "transmission_zone", "settlement_zone", "pricing_zone", "reserve_zone", name="zonetype", create_type=False), nullable=False),
         sa.Column("iso_region", sa.String(20), nullable=False),
         sa.Column("parent_zone_id", sa.String(50), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),

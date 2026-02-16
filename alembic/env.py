@@ -1,15 +1,25 @@
 """Alembic environment configuration."""
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool, create_engine
 
 from alembic import context
+
+# Load environment variables from .env
+load_dotenv()
 
 # Import all models for autogenerate support
 from backend.database import Base
 from backend.models import Asset, Outage, PricingNode, PricingRecord, Zone
 
 config = context.config
+
+# Override sqlalchemy.url from environment variable
+database_url = os.getenv("DATABASE_URL_SYNC")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -33,11 +43,8 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    url = config.get_main_option("sqlalchemy.url")
+    connectable = create_engine(url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(
